@@ -100,13 +100,15 @@ jobs:
           elif new_common not in content:
               raise SystemExit("Expected mt6789-common repository URL not found; stopping safely.")
 
-          old_common_dir = "local common=device/transsion/mt6789-common"
-          new_common_dir = """local common=device/transsion/mt6789-common
-          \tmkdir -p "$(dirname "$common")" """
-          if old_common_dir in content:
-              content = content.replace(old_common_dir, new_common_dir.rstrip(), 1)
-          elif 'mkdir -p "$(dirname "$common")"' not in content:
-              raise SystemExit("Common-tree parent-directory setup not found; stopping safely.")
+          old_common_clone = "git clone $URL -b fox_12.1-tranos15 $common"
+          new_common_clone = """mkdir -p "$(dirname "$common")"
+          echo "Cloning common tree branch fox_12.1-tranos15 from $URL ..."
+          git clone --branch fox_12.1-tranos15 --single-branch "$URL" "$common"
+          """
+          if old_common_clone in content:
+              content = content.replace(old_common_clone, new_common_clone.rstrip(), 1)
+          elif 'git clone --branch fox_12.1-tranos15 --single-branch "$URL" "$common"' not in content:
+              raise SystemExit("Expected common-tree clone command not found; stopping safely.")
 
           path.write_text(content)
           print("LI7 vendorsetup.sh patched successfully.")
