@@ -1,0 +1,37 @@
+
+name: Test Free Build Space
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-space:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@v2
+        with:
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          preinstalled-runtimes: false
+          swap-storage: false
+
+      - name: Check Available Resources
+        run: |
+          echo "===== DISK SPACE ====="
+          df -h /
+          df -h "$GITHUB_WORKSPACE"
+
+          echo "===== MEMORY ====="
+          free -h
+
+          echo "===== CPU ====="
+          nproc
