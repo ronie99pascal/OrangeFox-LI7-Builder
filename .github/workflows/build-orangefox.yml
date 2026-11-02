@@ -43,7 +43,7 @@ jobs:
             https://storage.googleapis.com/git-repo-downloads/repo
           chmod a+x "$HOME/bin/repo"
           echo "$HOME/bin" >> "$GITHUB_PATH"
-          
+
       - name: Sync OrangeFox Sources
         run: |
           mkdir -p "$GITHUB_WORKSPACE/OrangeFox_sync"
@@ -64,6 +64,28 @@ jobs:
             -b fox_12.1-hios15 \
             https://github.com/transsion-mt6789-recovery/twrp-device_tecno_TECNO-LI7.git \
             device/tecno/TECNO-LI7
+
+      - name: Patch LI7 Device Detection
+        run: |
+          FILE="fox_12.1/device/tecno/TECNO-LI7/vendorsetup.sh"
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("fox_12.1/device/tecno/TECNO-LI7/vendorsetup.sh")
+          content = path.read_text()
+          old = "THIS_DEVICE=${BASH_ARGV[2]}"
+          new = 'THIS_DEVICE="${BASH_ARGV[2]:-$BASH_SOURCE}"'
+
+          if old not in content:
+              raise SystemExit("Expected LI7 shell-detection line was not found; stopping safely.")
+
+          path.write_text(content.replace(old, new, 1))
+          print("Patched LI7 vendorsetup.sh:")
+          for number, line in enumerate(path.read_text().splitlines(), 1):
+              if "THIS_DEVICE=" in line:
+                  print(f"{number}: {line}")
+          PY
 
       - name: Build OrangeFox
         shell: bash
