@@ -36,6 +36,14 @@ jobs:
             schedtool squashfs-tools xsltproc zip \
             zlib1g-dev aria2 python-is-python3
 
+      - name: Install Android Repo Tool
+        run: |
+          mkdir -p "$HOME/bin"
+          curl -o "$HOME/bin/repo" \
+            https://storage.googleapis.com/git-repo-downloads/repo
+          chmod a+x "$HOME/bin/repo"
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+          
       - name: Sync OrangeFox Sources
         run: |
           mkdir -p "$GITHUB_WORKSPACE/OrangeFox_sync"
