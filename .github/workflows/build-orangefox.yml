@@ -1,0 +1,88 @@
+name: Build OrangeFox LI7
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
+    steps:
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@v2
+        with:
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          preinstalled-runtimes: false
+          swap-storage: false
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bc bison build-essential ccache curl flex \
+            g++-multilib gcc-multilib git git-lfs gnupg \
+            gperf imagemagick lib32ncurses-dev \
+            lib32readline-dev lib32z1-dev libelf-dev \
+            liblz4-tool libncurses-dev libssl-dev \
+            libxml2 libxml2-utils lzop pngcrush rsync \
+            schedtool squashfs-tools xsltproc zip \
+            zlib1g-dev aria2 python-is-python3
+
+      - name: Sync OrangeFox Sources
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/OrangeFox_sync"
+
+          git clone https://gitlab.com/OrangeFox/sync.git \
+            "$GITHUB_WORKSPACE/OrangeFox_sync/sync"
+
+          cd "$GITHUB_WORKSPACE/OrangeFox_sync/sync"
+
+          ./orangefox_sync.sh --branch 12.1 \
+            --path "$GITHUB_WORKSPACE/fox_12.1"
+
+      - name: Clone LI7 Device Tree
+        run: |
+          cd "$GITHUB_WORKSPACE/fox_12.1"
+
+          git clone \
+            -b fox_12.1-hios15 \
+            https://github.com/transsion-mt6789-recovery/twrp-device_tecno_TECNO-LI7.git \
+            device/tecno/TECNO-LI7
+
+      - name: Build OrangeFox
+        shell: bash
+        run: |
+          cd "$GITHUB_WORKSPACE/fox_12.1"
+
+          mkdir -p "$HOME/Magisk"
+          mkdir -p "$GITHUB_WORKSPACE/fox_12.1/.ccache"
+
+          export ALLOW_MISSING_DEPENDENCIES=true
+          export FOX_BUILD_DEVICE=LI7
+          export LC_ALL=C
+          export USE_CCACHE=1
+          export CCACHE_EXEC=/usr/bin/ccache
+
+          source build/envsetup.sh
+          lunch twrp_LI7-eng
+
+          mka -j4 adbd vendorbootimage
+
+      - name: Upload Build Output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OrangeFox-LI7-Build
+          path: |
+            fox_12.1/out/target/product/TECNO-LI7/
+            fox_12.1/out/target/product/LI7/
+          if-no-files-found: warn
+          retention-days: 7
