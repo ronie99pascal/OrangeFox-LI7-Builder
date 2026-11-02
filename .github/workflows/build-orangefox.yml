@@ -100,6 +100,14 @@ jobs:
           elif new_common not in content:
               raise SystemExit("Expected mt6789-common repository URL not found; stopping safely.")
 
+          old_common_dir = "local common=device/transsion/mt6789-common"
+          new_common_dir = """local common=device/transsion/mt6789-common
+          \tmkdir -p "$(dirname "$common")" """
+          if old_common_dir in content:
+              content = content.replace(old_common_dir, new_common_dir.rstrip(), 1)
+          elif 'mkdir -p "$(dirname "$common")"' not in content:
+              raise SystemExit("Common-tree parent-directory setup not found; stopping safely.")
+
           path.write_text(content)
           print("LI7 vendorsetup.sh patched successfully.")
           PY
