@@ -114,6 +114,22 @@ jobs:
           print("LI7 vendorsetup.sh patched successfully.")
           PY
 
+      - name: Preflight Common Tree Clone
+        shell: bash
+        run: |
+          cd "$GITHUB_WORKSPACE/fox_12.1"
+          set -euxo pipefail
+          URL="https://github.com/transsion-mt6789-recovery/twrp-device_transsion_mt6789-common.git"
+          BRANCH="fox_12.1-tranos15"
+          DEST="device/transsion/mt6789-common"
+          mkdir -p "$(dirname "$DEST")"
+          echo "Checking remote branch..."
+          git ls-remote --heads "$URL" "$BRANCH"
+          echo "Cloning common tree with full diagnostic output..."
+          GIT_TERMINAL_PROMPT=0 git -c http.version=HTTP/1.1 clone --verbose --progress --branch "$BRANCH" --single-branch "$URL" "$DEST"
+          echo "Common tree clone completed."
+          test -f "$DEST/BoardConfigCommon.mk" || { echo "Expected BoardConfigCommon.mk missing"; exit 1; }
+
       - name: Build OrangeFox
         shell: bash
         run: |
