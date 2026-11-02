@@ -135,7 +135,9 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE/fox_12.1"
 
-          set -Eeuo pipefail
+          # GitHub Actions already enables -e and -o pipefail for this Bash step.
+          # Do not enable -u: Android envsetup.sh relies on some unset variables.
+          set -o pipefail
           trap 'rc=$?; printf "::error::Command failed (exit %s): %s (line %s)\\n" "$rc" "$BASH_COMMAND" "${BASH_LINENO[0]}"; exit "$rc"' ERR
           PS4='+ [${BASH_SOURCE##*/}:${LINENO}] '
 
