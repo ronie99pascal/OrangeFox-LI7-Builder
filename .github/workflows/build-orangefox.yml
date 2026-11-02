@@ -56,6 +56,32 @@ jobs:
           ./orangefox_sync.sh --branch 12.1 \
             --path "$GITHUB_WORKSPACE/fox_12.1"
 
+      - name: Patch OrangeFox Envsetup Optional File Check
+        shell: bash
+        run: |
+          cd "$GITHUB_WORKSPACE/fox_12.1"
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("build/make/envsetup.sh")
+          if not path.is_file():
+              raise SystemExit(f"Expected OrangeFox envsetup file not found: {path}")
+
+          content = path.read_text()
+          old = '[ -s $FOX_MANIFEST_ROOT/frameworks/base/services/core/xsd/vts/Android.mk ] && echo -n "" > $FOX_MANIFEST_ROOT/frameworks/base/services/core/xsd/vts/Android.mk'
+          new = """if [ -s "$FOX_MANIFEST_ROOT/frameworks/base/services/core/xsd/vts/Android.mk" ]; then
+              : > "$FOX_MANIFEST_ROOT/frameworks/base/services/core/xsd/vts/Android.mk"
+          fi"""
+
+          if old in content:
+              content = content.replace(old, new, 1)
+          elif new not in content:
+              raise SystemExit("Expected OrangeFox optional Android.mk check not found; stopping safely.")
+
+          path.write_text(content)
+          print("OrangeFox envsetup optional-file check patched successfully.")
+          PY
+
       - name: Clone LI7 Device Tree
         run: |
           cd "$GITHUB_WORKSPACE/fox_12.1"
