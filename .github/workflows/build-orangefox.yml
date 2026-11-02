@@ -199,13 +199,34 @@ jobs:
             fi
           done
 
+      - name: Stage Flashable Build Images
+        if: always()
+        shell: bash
+        run: |
+          set -e
+          STAGE="$GITHUB_WORKSPACE/orangefox-artifacts"
+          mkdir -p "$STAGE"
+
+          for product in TECNO-LI7 LI7; do
+            DIR="fox_12.1/out/target/product/$product"
+            if [ -d "$DIR" ]; then
+              echo "Scanning only top-level build outputs in $DIR"
+              while IFS= read -r -d '' file; do
+                name="$(basename "$file")"
+                echo "Staging $product/$name"
+                cp -L "$file" "$STAGE/$product-$name"
+              done < <(find "$DIR" -maxdepth 1 -type f \\( -name '*.img' -o -name '*.zip' \\) -print0)
+            fi
+          done
+
+          echo "Staged artifact files:"
+          find "$STAGE" -maxdepth 1 -type f -printf '%f (%s bytes)\\n' | sort
+
       - name: Upload Build Output
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: OrangeFox-LI7-Build
-          path: |
-            fox_12.1/out/target/product/TECNO-LI7/
-            fox_12.1/out/target/product/LI7/
+          path: orangefox-artifacts/
           if-no-files-found: warn
           retention-days: 7
