@@ -93,6 +93,13 @@ jobs:
           elif "external/gflags already exists; skipping duplicate clone." not in content:
               raise SystemExit("Expected gflags clone command not found; stopping safely.")
 
+          old_common = "https://github.com/transsion-mt6789/twrp-device_transsion_mt6789-common.git"
+          new_common = "https://github.com/transsion-mt6789-recovery/twrp-device_transsion_mt6789-common.git"
+          if old_common in content:
+              content = content.replace(old_common, new_common, 1)
+          elif new_common not in content:
+              raise SystemExit("Expected mt6789-common repository URL not found; stopping safely.")
+
           path.write_text(content)
           print("LI7 vendorsetup.sh patched successfully.")
           PY
