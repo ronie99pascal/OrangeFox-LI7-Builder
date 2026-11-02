@@ -135,6 +135,10 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE/fox_12.1"
 
+          set -Eeuo pipefail
+          trap 'rc=$?; printf "::error::Command failed (exit %s): %s (line %s)\\n" "$rc" "$BASH_COMMAND" "${BASH_LINENO[0]}"; exit "$rc"' ERR
+          PS4='+ [${BASH_SOURCE##*/}:${LINENO}] '
+
           mkdir -p "$HOME/Magisk"
           mkdir -p "$GITHUB_WORKSPACE/fox_12.1/.ccache"
 
@@ -144,9 +148,14 @@ jobs:
           export USE_CCACHE=1
           export CCACHE_EXEC=/usr/bin/ccache
 
+          echo "Starting build/envsetup.sh with Bash xtrace enabled..."
+          set -x
           source build/envsetup.sh
+          set +x
+          echo "build/envsetup.sh completed; starting lunch..."
           lunch twrp_LI7-eng
 
+          echo "Lunch completed; starting vendorbootimage build..."
           mka -j4 adbd vendorbootimage
 
       - name: Upload Build Output
