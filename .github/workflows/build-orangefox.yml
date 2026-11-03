@@ -203,29 +203,41 @@ jobs:
         if: always()
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
           STAGE="$GITHUB_WORKSPACE/orangefox-artifacts"
+          DIR="fox_12.1/out/target/product/TECNO-LI7"
+
           mkdir -p "$STAGE"
 
-          DIR="fox_12.1/out/target/product/TECNO-LI7"
-          if [ -d "$DIR" ]; then
-            echo "Staging flashable outputs from $DIR"
-            while IFS= read -r -d '' file; do
-              case "$file" in
-                *.img|*.zip)
-                  name="$(basename "$file")"
-                  echo "Staging $name"
-                  cp -L "$file" "$STAGE/$name"
-                  ;;
-              esac
-            done < <(find "$DIR" -maxdepth 1 -type f -print0)
+          if [ ! -d "$DIR" ]; then
+            echo "::error::Build output directory not found: $DIR"
+            exit 1
+          fi
+
+          echo "Scanning top-level build outputs in $DIR"
+          while IFS= read -r -d '' file; do
+            case "$file" in
+              *.img|*.zip)
+                name="$(basename "$file")"
+                echo "Staging $name"
+                cp -L "$file" "$STAGE/$name"
+                ;;
+            esac
+          done < <(find "$DIR" -maxdepth 1 -type f -print0)
 
           echo "Staged artifact files:"
-          find "$STAGE" -maxdepth 1 -type f -printf '%f (%s bytes)\\n' | sort
+          find "$STAGE" -maxdepth 1 -type f -printf '%f (%s bytes)\n' | sort
+
+          if ! find "$STAGE" -maxdepth 1 -type f \( -name '*.img' -o -name '*.zip' \) -print -quit | grep -q .; then
+            echo "::error::No .img or .zip files were found to upload."
+            echo "Top-level build directory contents:"
+            find "$DIR" -maxdepth 1 -type f -printf '%f\n' | sort
+            exit 1
+          fi
 
       - name: Upload Build Output
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: OrangeFox-LI7-Build
           path: orangefox-artifacts/
