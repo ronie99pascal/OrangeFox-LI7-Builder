@@ -207,17 +207,18 @@ jobs:
           STAGE="$GITHUB_WORKSPACE/orangefox-artifacts"
           mkdir -p "$STAGE"
 
-          for product in TECNO-LI7 LI7; do
-            DIR="fox_12.1/out/target/product/$product"
-            if [ -d "$DIR" ]; then
-              echo "Scanning only top-level build outputs in $DIR"
-              while IFS= read -r -d '' file; do
-                name="$(basename "$file")"
-                echo "Staging $product/$name"
-                cp -L "$file" "$STAGE/$product-$name"
-              done < <(find "$DIR" -maxdepth 1 -type f \\( -name '*.img' -o -name '*.zip' \\) -print0)
-            fi
-          done
+          DIR="fox_12.1/out/target/product/TECNO-LI7"
+          if [ -d "$DIR" ]; then
+            echo "Staging flashable outputs from $DIR"
+            while IFS= read -r -d '' file; do
+              name="$(basename "$file")"
+              echo "Staging $name"
+              cp -L "$file" "$STAGE/$name"
+            done < <(find "$DIR" -maxdepth 1 -type f \( -name '*.img' -o -name '*.zip' \) -print0)
+          else
+            echo "::error::Build output directory not found: $DIR"
+            exit 1
+          fi
 
           echo "Staged artifact files:"
           find "$STAGE" -maxdepth 1 -type f -printf '%f (%s bytes)\\n' | sort
