@@ -211,14 +211,14 @@ jobs:
           if [ -d "$DIR" ]; then
             echo "Staging flashable outputs from $DIR"
             while IFS= read -r -d '' file; do
-              name="$(basename "$file")"
-              echo "Staging $name"
-              cp -L "$file" "$STAGE/$name"
-            done < <(find "$DIR" -maxdepth 1 -type f \( -name '*.img' -o -name '*.zip' \) -print0)
-          else
-            echo "::error::Build output directory not found: $DIR"
-            exit 1
-          fi
+              case "$file" in
+                *.img|*.zip)
+                  name="$(basename "$file")"
+                  echo "Staging $name"
+                  cp -L "$file" "$STAGE/$name"
+                  ;;
+              esac
+            done < <(find "$DIR" -maxdepth 1 -type f -print0)
 
           echo "Staged artifact files:"
           find "$STAGE" -maxdepth 1 -type f -printf '%f (%s bytes)\\n' | sort
