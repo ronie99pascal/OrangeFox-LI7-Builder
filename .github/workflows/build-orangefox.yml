@@ -88,7 +88,7 @@ jobs:
 
           git clone \
             -b fox_12.1-hios15 \
-            https://github.com/transsion-mt6789-recovery/twrp-device_tecno_TECNO-LI7.git \
+            https://github.com/ronie99pascal/twrp-device_tecno_TECNO-LI7.git \
             device/tecno/TECNO-LI7
 
       - name: Patch LI7 Device Setup
