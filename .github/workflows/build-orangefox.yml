@@ -199,43 +199,36 @@ jobs:
             fi
           done
 
-      - name: Stage Flashable Build Images
+      - name: Stage OrangeFox Image
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          STAGE="$GITHUB_WORKSPACE/orangefox-artifacts"
           DIR="fox_12.1/out/target/product/TECNO-LI7"
+          STAGE="$GITHUB_WORKSPACE/orangefox-artifacts"
+          SOURCE="$DIR/OrangeFox-R12.0-Unofficial-LI7.img"
 
           mkdir -p "$STAGE"
-
-          if [ ! -d "$DIR" ]; then
-            echo "::error::Build output directory not found: $DIR"
+          if [ ! -f "$SOURCE" ]; then
+            echo "::error::Expected OrangeFox image not found: $SOURCE"
+            echo "Available image files:"
+            find "$DIR" -maxdepth 1 -type f -name '*.img' -printf '%f\\n' 2>/dev/null || true
             exit 1
           fi
 
-          echo "Scanning top-level build outputs in $DIR"
-          while IFS= read -r -d '' file; do
-            case "$file" in
-              *.img|*.zip)
-                name="$(basename "$file")"
-                echo "Staging $name"
-                cp -L "$file" "$STAGE/$name"
-                ;;
-            esac
-          done < <(find "$DIR" -maxdepth 1 -type f -print0)
+          cp -L "$SOURCE" "$STAGE/orangeFox_LI7.img"
+          ls -lh "$STAGE/orangeFox_LI7.img"
 
-          echo "Staged artifact files:"
-          find "$STAGE" -maxdepth 1 -type f -printf '%f (%s bytes)\n' | sort
+      - name: Upload OrangeFox Image
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: OrangeFox-LI7
+          path: orangefox-artifacts/orangeFox_LI7.img
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
 
-          if ! find "$STAGE" -maxdepth 1 -type f \( -name '*.img' -o -name '*.zip' \) -print -quit | grep -q .; then
-            echo "::error::No .img or .zip files were found to upload."
-            echo "Top-level build directory contents:"
-            find "$DIR" -maxdepth 1 -type f -printf '%f\n' | sort
-            exit 1
-          fi
-
-      - name: Upload Build Output
         if: always()
         uses: actions/upload-artifact@v7
         with:
