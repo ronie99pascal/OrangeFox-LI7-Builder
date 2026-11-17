@@ -1,0 +1,32 @@
+
+name: Test Free Build Space
+
+on:
+  workflow_dispatch:
+
+jobs:
+  disk-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Disk Space Before Cleanup
+        run: |
+          echo "===== BEFORE CLEANUP ====="
+          df -h /
+          echo
+          lsblk
+
+      - name: Free Build Space
+        run: |
+          echo "===== CLEANING ====="
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo rm -rf /tmp/*
+          sudo rm -rf /var/tmp/*
+
+      - name: Disk Space After Cleanup
+        run: |
+          echo "===== AFTER CLEANUP ====="
+          df -h /
+          echo
+          df -h /home
