@@ -1,0 +1,38 @@
+
+name: Aggressive Free Build Space Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  disk-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Disk Before Cleanup
+        run: |
+          echo "===== BEFORE ====="
+          df -h /
+
+      - name: Aggressive Cleanup
+        run: |
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo rm -rf /tmp/*
+          sudo rm -rf /var/tmp/*
+
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/.ghcup
+          sudo rm -rf /usr/local/share/chromium
+          sudo rm -rf /opt/microsoft
+
+          docker system prune -af || true
+
+      - name: Disk After Cleanup
+        run: |
+          echo "===== AFTER ====="
+          df -h /
+          echo
+          sudo du -sh /usr/local/* /opt/* 2>/dev/null | sort -h | tail -20
